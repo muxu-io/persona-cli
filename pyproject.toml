@@ -1,0 +1,60 @@
+[project]
+name = "persona-cli"
+version = "0.1.0"
+description = "Interactive runtime CLI for locally-hosted persona LLMs: episodic memory, evolving personality, optional streamed voice."
+requires-python = ">=3.11,<4.0"
+license = { text = "Apache-2.0" }
+dependencies = [
+  "persona-core>=1.0,<2",
+  "python-frontmatter>=1.1",
+  "pyyaml>=6.0",
+  "httpx>=0.27",
+  "pysbd>=0.3.4,<1",
+  "sounddevice>=0.4.7,<1",
+]
+
+[project.scripts]
+persona = "persona.cli:main"
+
+[tool.poetry]
+packages = [{ include = "persona", from = "src" }]
+
+[tool.poetry.dependencies]
+persona-core = { source = "gitlab" }
+
+[[tool.poetry.source]]
+name = "gitlab"
+url = "https://gitlab.com/api/v4/projects/83381755/packages/pypi/simple"
+priority = "supplemental"
+
+[tool.poetry.group.dev.dependencies]
+pytest = ">=8.0"
+pytest-asyncio = ">=0.23"
+respx = ">=0.21"
+ruff = ">=0.6"
+black = ">=24.0"
+bandit = ">=1.7"
+pip-audit = ">=2.7"
+
+[build-system]
+requires = ["poetry-core>=2.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.semantic_release]
+version_toml = ["pyproject.toml:project.version"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+addopts = "-q"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+
+[tool.black]
+line-length = 100
+target-version = ["py311"]
