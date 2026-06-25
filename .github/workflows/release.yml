@@ -1,0 +1,24 @@
+name: Release
+run-name: Release
+
+on:
+  push:
+    branches: [master]
+
+permissions:
+  contents: write
+  packages: write
+  id-token: write
+
+jobs:
+  release:
+    uses: muxu-io/shared-workflows/.github/workflows/python-release.yml@master
+    secrets: inherit
+
+  publish:
+    needs: release
+    if: needs.release.outputs.released == 'true'
+    uses: muxu-io/shared-workflows/.github/workflows/python-publish.yml@master
+    with:
+      version: ${{ needs.release.outputs.version }}
+    secrets: inherit

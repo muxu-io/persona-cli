@@ -1,0 +1,14 @@
+name: CI
+run-name: CI
+
+on:
+  pull_request:
+  workflow_dispatch:
+# Push to master is handled by release.yml (checks -> semantic-release -> publish),
+# so CI here covers PRs and manual runs only — no duplicate checks on master.
+
+jobs:
+  checks:
+    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' || github.event.head_commit.author.email != 'semantic-release'
+    uses: muxu-io/shared-workflows/.github/workflows/python-checks.yml@master
+    secrets: inherit
