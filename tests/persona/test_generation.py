@@ -13,7 +13,7 @@ class _FakeOllamaGen:
         self.reply = reply
         self.calls = []
 
-    def generate(self, model, prompt, options=None):
+    def generate(self, model, prompt, options=None, think=False):
         self.calls.append((model, prompt, options))
         return {"response": self.reply, "done": True}
 
@@ -184,7 +184,7 @@ def test_run_turn_does_not_persist_runtime_state_per_turn():
     store.ensure_collection()
 
     class StubGen:
-        def generate(self, model, prompt, options=None):
+        def generate(self, model, prompt, options=None, think=False):
             return {"response": "hello back"}
 
     gen = GenerationClient(model="x", transport=StubGen())
@@ -222,7 +222,7 @@ def test_generate_stream_yields_chunks():
     from persona.generation import GenerationClient
 
     class StubStreamingTransport:
-        def generate(self, model, prompt, options=None, stream=False):
+        def generate(self, model, prompt, options=None, stream=False, think=False):
             if stream:
                 return iter(
                     [
@@ -261,7 +261,7 @@ def test_generate_stream_handles_ollama_response_objects():
             self.response = response
 
     class StubStreamingTransport:
-        def generate(self, model, prompt, options=None, stream=False):
+        def generate(self, model, prompt, options=None, stream=False, think=False):
             assert stream is True
             return iter(
                 [
@@ -278,6 +278,95 @@ def test_generate_stream_handles_ollama_response_objects():
 
     chunks = asyncio.run(collect())
     assert chunks == ["Hi ", "there."]
+
+
+def test_generate_forwards_think_flag_to_transport():
+    class _RecordingTransport:
+        def __init__(self):
+            self.think = "unset"
+
+        def generate(self, model, prompt, options=None, think=False):
+            self.think = think
+            return {"response": "ok"}
+
+    t = _RecordingTransport()
+    gen = GenerationClient(model="x", transport=t)
+
+    gen.generate("prompt")
+    assert t.think is False  # default: no reasoning
+
+    gen.generate("prompt", think=True)
+    assert t.think is True
+
+
+def test_generate_stream_forwards_think_flag_to_transport():
+    import asyncio
+
+    class _RecordingStreamTransport:
+        def __init__(self):
+            self.think = "unset"
+
+        def generate(self, model, prompt, options=None, stream=False, think=False):
+            self.think = think
+            return iter([{"response": "hi"}])
+
+    t = _RecordingStreamTransport()
+    gen = GenerationClient(model="x", transport=t)
+
+    async def drain(think):
+        return [c async for c in gen.generate_stream("prompt", think=think)]
+
+    asyncio.run(drain(False))
+    assert t.think is False
+
+    asyncio.run(drain(True))
+    assert t.think is True
+
+
+def test_generate_stream_discards_reasoning_chunks():
+    """The feature's core promise: with think on, Ollama returns reasoning in a
+    separate `thinking` field with an empty `response`. Those chunks must never
+    reach the stream (and thus never be spoken)."""
+    import asyncio
+
+    class _ThinkingChunk:
+        def __init__(self, response="", thinking=""):
+            self.response = response
+            self.thinking = thinking
+
+    class _ReasoningTransport:
+        def generate(self, model, prompt, options=None, stream=False, think=False):
+            return iter(
+                [
+                    _ThinkingChunk(thinking="Let me reason... "),
+                    _ThinkingChunk(thinking="the answer is 4."),
+                    _ThinkingChunk(response="It's four."),
+                ]
+            )
+
+    gen = GenerationClient(model="x", transport=_ReasoningTransport())
+
+    async def drain():
+        return [c async for c in gen.generate_stream("prompt", think=True)]
+
+    assert asyncio.run(drain()) == ["It's four."]
+
+
+def test_run_turn_forwards_think_to_gen_client():
+    store = QdrantStore.in_memory(collection="t", vector_size=4, persona_id="t")
+    store.ensure_collection()
+    embedder = EmbeddingClient(model="nomic", transport=_FakeOllamaEmb())
+
+    class _RecordingTransport:
+        think = "unset"
+
+        def generate(self, model, prompt, options=None, think=False):
+            _RecordingTransport.think = think
+            return {"response": "ok"}
+
+    gen = GenerationClient(model="llama", transport=_RecordingTransport())
+    run_turn(_persona(), "hi", store, embedder, gen, "s-1", [], think=True)
+    assert _RecordingTransport.think is True
 
 
 def test_run_turn_async_streams_to_voice_and_writes_qdrant_independently():
@@ -300,7 +389,7 @@ def test_run_turn_async_streams_to_voice_and_writes_qdrant_independently():
     store.ensure_collection()
 
     class StubStreamingTransport:
-        def generate(self, model, prompt, options=None, stream=False):
+        def generate(self, model, prompt, options=None, stream=False, think=False):
             assert stream is True
             return iter(
                 [

@@ -14,7 +14,7 @@ N_TURNS = 30
 
 
 class _StubGen:
-    def generate(self, model, prompt, options=None, stream=False):
+    def generate(self, model, prompt, options=None, stream=False, think=False):
         text = "Hello back. This is a deterministic reply."
         if stream:
             return iter([{"response": text}, {"response": ""}])

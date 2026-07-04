@@ -112,3 +112,71 @@ def test_run_voice_turn_resolves_spec(monkeypatch):
     # No voice dimension on the fixture → piper fallback.
     assert captured["spec"].engine == "piper"
     assert captured["spec"].fatigue_level == str(FatigueLevel.RESTED)
+
+
+def test_run_voice_turn_forwards_think(monkeypatch):
+    """A `/think` turn must pass think=True into run_turn_async on the voice path."""
+    import asyncio
+    from pathlib import Path
+
+    from persona_core.parser import parse_persona_file
+
+    import persona.cli as cli
+    from persona.fatigue import FatigueLevel
+
+    persona = parse_persona_file(Path(__file__).parent.parent / "fixtures" / "minimal_persona.md")
+
+    seen: dict = {}
+
+    class _StubSink:
+        def __init__(self, *a, **k):
+            pass
+
+    class _StubAsyncClient:
+        def __init__(self, *a, **k):
+            pass
+
+        async def __aenter__(self):
+            return object()
+
+        async def __aexit__(self, *a):
+            return False
+
+    class _StubVoiceClient:
+        def __init__(self, **kwargs):
+            pass
+
+        async def speak_stream(self, sentences):  # pragma: no cover - unused
+            return None
+
+    async def _stub_run_turn_async(**kwargs):
+        seen.update(kwargs)
+        return "ok"
+
+    monkeypatch.setattr("persona.audio_sink.SounddeviceSink", _StubSink)
+    monkeypatch.setattr("httpx.AsyncClient", _StubAsyncClient)
+    monkeypatch.setattr("persona.voice_client.VoiceClient", _StubVoiceClient)
+    monkeypatch.setattr("persona.generation.run_turn_async", _stub_run_turn_async)
+
+    asyncio.run(
+        cli._run_voice_turn(
+            voice_base_url="http://127.0.0.1:7000",
+            persona=persona,
+            user_message="hi",
+            store=None,
+            media=None,
+            embedder=None,
+            gen_client=None,
+            session_id="sid",
+            working_memory=[],
+            triggered_dims=[],
+            retrieved=[],
+            fatigue_level=FatigueLevel.RESTED,
+            addendum_enabled=False,
+            scenario=None,
+            runtime_state=None,
+            think=True,
+        )
+    )
+
+    assert seen.get("think") is True

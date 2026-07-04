@@ -30,6 +30,7 @@ class _GenTransport(Protocol):
         prompt: str,
         options: dict | None = None,
         stream: bool = False,
+        think: bool = False,
     ) -> dict[str, Any]: ...
 
 
@@ -53,11 +54,13 @@ class GenerationClient:
         prompt: str,
         num_ctx: int = DEFAULT_NUM_CTX,
         num_predict: int = DEFAULT_NUM_PREDICT,
+        think: bool = False,
     ) -> str:
         result = self._transport.generate(
             model=self.model,
             prompt=prompt,
             options={"num_ctx": num_ctx, "num_predict": num_predict},
+            think=think,
         )
         return result["response"]
 
@@ -66,17 +69,21 @@ class GenerationClient:
         prompt: str,
         num_ctx: int = DEFAULT_NUM_CTX,
         num_predict: int = DEFAULT_NUM_PREDICT,
+        think: bool = False,
     ) -> AsyncIterator[str]:
         """Stream chunks of the model's response. Wraps the (sync) Ollama
         streaming iterator in an async-friendly shape using a thread.
 
         Empty chunks are filtered; the iterator naturally terminates when the
-        underlying generator is exhausted."""
+        underlying generator is exhausted. Reasoning (when ``think`` is set)
+        arrives in a separate ``thinking`` field, which this loop never reads —
+        so it is discarded and never streamed to voice."""
         sync_iter = self._transport.generate(
             model=self.model,
             prompt=prompt,
             options={"num_ctx": num_ctx, "num_predict": num_predict},
             stream=True,
+            think=think,
         )
         sentinel = object()
 
@@ -113,6 +120,7 @@ def run_turn(
     scenario: Scenario | None = None,
     scenario_id: str | None = None,
     runtime_state=None,
+    think: bool = False,
 ) -> str:
     """One conversational turn. Returns the assistant response and mutates state."""
     ctx = assemble_context(
@@ -126,7 +134,7 @@ def run_turn(
         scenario=scenario,
     )
 
-    response = gen_client.generate(ctx.text)
+    response = gen_client.generate(ctx.text, think=think)
 
     record = EpisodicRecord(
         type=RecordType.TURN_PAIR,
@@ -168,6 +176,7 @@ async def run_turn_async(
     scenario: Scenario | None = None,
     scenario_id: str | None = None,
     runtime_state=None,
+    think: bool = False,
 ) -> str:
     """Streaming variant of run_turn: tees Ollama output into sentences (for
     voice) and full text (for qdrant). Voice failures NEVER block the qdrant
@@ -183,7 +192,7 @@ async def run_turn_async(
         scenario=scenario,
     )
 
-    token_stream = gen_client.generate_stream(ctx.text)
+    token_stream = gen_client.generate_stream(ctx.text, think=think)
     sentence_iter, full_text_future = tee_into_sentences(token_stream)
 
     voice_task = asyncio.create_task(speak(sentence_iter))
