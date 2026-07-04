@@ -17,6 +17,10 @@ to `voice-svc`.
     persona scenarios ada-mcleish
     persona inventory ada-mcleish
 
+Inside a `chat` session, prefix a message with `/think` to make the model reason
+for that one turn (e.g. `/think what changed between us since last time?`).
+Replies are fast by default; the reasoning is discarded, not shown or spoken.
+
 Requires the runtime services on localhost (ollama, qdrant, persona-store; voice-svc
 optional). Voice playback needs PortAudio (sounddevice).
 

@@ -31,6 +31,20 @@ def _store_client() -> StoreClient:
     return StoreClient(os.environ.get("PERSONA_STORE_URL", "http://localhost:7600"))
 
 
+def parse_think_prefix(line: str) -> tuple[bool, str]:
+    """Detect a leading ``/think`` command on a prompt line.
+
+    ``"/think msg"`` -> ``(True, "msg")``; anything else -> ``(False, line)``.
+    Only ``/think`` followed by whitespace or end-of-line triggers, so
+    ``"/thinking ..."`` is treated as an ordinary message.
+    """
+    if line == "/think":
+        return True, ""
+    if line.startswith("/think") and line[len("/think")].isspace():
+        return True, line[len("/think") :].strip()
+    return False, line
+
+
 def _voice_enabled(flag_voice: bool | None, env: str | None) -> bool:
     """Resolve the voice toggle. Flag wins over env. Default is on."""
     if flag_voice is not None:
@@ -77,6 +91,7 @@ async def _run_voice_turn(
     addendum_enabled: bool,
     scenario,
     runtime_state,
+    think: bool = False,
 ) -> tuple[str, bool]:
     """Run one turn with voice on. Returns (response_text, voice_still_available).
     On VoiceUnavailable the caller downgrades to text-only for the rest of the
@@ -113,6 +128,7 @@ async def _run_voice_turn(
                 addendum_enabled=addendum_enabled,
                 scenario=scenario,
                 runtime_state=runtime_state,
+                think=think,
             )
             return response, True
         except VoiceUnavailable as e:
@@ -181,6 +197,7 @@ def cmd_chat(args: argparse.Namespace) -> int:
                 break
             if user.lower() in {"exit", "quit"}:
                 break
+            think, user = parse_think_prefix(user)
             if not user:
                 continue
 
@@ -221,6 +238,7 @@ def cmd_chat(args: argparse.Namespace) -> int:
                         addendum_enabled=args.addendum,
                         scenario=scenario,
                         runtime_state=loaded.runtime_state,
+                        think=think,
                     )
                 )
                 if not still_on:
@@ -239,6 +257,7 @@ def cmd_chat(args: argparse.Namespace) -> int:
                         addendum_enabled=args.addendum,
                         scenario=scenario,
                         runtime_state=loaded.runtime_state,
+                        think=think,
                     )
             else:
                 response = run_turn(
@@ -255,6 +274,7 @@ def cmd_chat(args: argparse.Namespace) -> int:
                     addendum_enabled=args.addendum,
                     scenario=scenario,
                     runtime_state=loaded.runtime_state,
+                    think=think,
                 )
             print(response)
             print()
