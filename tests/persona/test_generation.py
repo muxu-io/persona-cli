@@ -13,7 +13,7 @@ class _FakeOllamaGen:
         self.reply = reply
         self.calls = []
 
-    def generate(self, model, prompt, options=None):
+    def generate(self, model, prompt, options=None, think=False):
         self.calls.append((model, prompt, options))
         return {"response": self.reply, "done": True}
 
@@ -184,7 +184,7 @@ def test_run_turn_does_not_persist_runtime_state_per_turn():
     store.ensure_collection()
 
     class StubGen:
-        def generate(self, model, prompt, options=None):
+        def generate(self, model, prompt, options=None, think=False):
             return {"response": "hello back"}
 
     gen = GenerationClient(model="x", transport=StubGen())
@@ -222,7 +222,7 @@ def test_generate_stream_yields_chunks():
     from persona.generation import GenerationClient
 
     class StubStreamingTransport:
-        def generate(self, model, prompt, options=None, stream=False):
+        def generate(self, model, prompt, options=None, stream=False, think=False):
             if stream:
                 return iter(
                     [
@@ -261,7 +261,7 @@ def test_generate_stream_handles_ollama_response_objects():
             self.response = response
 
     class StubStreamingTransport:
-        def generate(self, model, prompt, options=None, stream=False):
+        def generate(self, model, prompt, options=None, stream=False, think=False):
             assert stream is True
             return iter(
                 [
@@ -300,7 +300,7 @@ def test_run_turn_async_streams_to_voice_and_writes_qdrant_independently():
     store.ensure_collection()
 
     class StubStreamingTransport:
-        def generate(self, model, prompt, options=None, stream=False):
+        def generate(self, model, prompt, options=None, stream=False, think=False):
             assert stream is True
             return iter(
                 [
@@ -336,3 +336,44 @@ def test_run_turn_async_streams_to_voice_and_writes_qdrant_independently():
 
     # Despite voice failing, the turn-pair should be persisted.
     assert store.count() == 1
+
+
+def test_generate_disables_thinking():
+    """Reasoning models (e.g. qwen3) otherwise spend the whole num_predict budget
+    in the thinking channel and return an empty response. Chat must request
+    think=False so the model produces the answer, not the reasoning."""
+
+    class _Capture:
+        def __init__(self):
+            self.think = "unset"
+
+        def generate(self, model, prompt, options=None, stream=False, think=False):
+            self.think = think
+            return {"response": "hi"}
+
+    cap = _Capture()
+    reply = GenerationClient(model="x", transport=cap).generate("prompt")
+    assert reply == "hi"
+    assert cap.think is False
+
+
+def test_generate_stream_disables_thinking():
+    """The streaming (voice) path must disable thinking for the same reason."""
+    import asyncio
+
+    class _Capture:
+        def __init__(self):
+            self.think = "unset"
+
+        def generate(self, model, prompt, options=None, stream=False, think=False):
+            self.think = think
+            return iter([{"response": "hi"}])
+
+    cap = _Capture()
+    gen = GenerationClient(model="x", transport=cap)
+    asyncio.run(_drain(gen))
+    assert cap.think is False
+
+
+async def _drain(gen):
+    return [c async for c in gen.generate_stream("prompt")]

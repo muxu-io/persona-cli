@@ -30,6 +30,7 @@ class _GenTransport(Protocol):
         prompt: str,
         options: dict | None = None,
         stream: bool = False,
+        think: bool = False,
     ) -> dict[str, Any]: ...
 
 
@@ -58,6 +59,7 @@ class GenerationClient:
             model=self.model,
             prompt=prompt,
             options={"num_ctx": num_ctx, "num_predict": num_predict},
+            think=False,
         )
         return result["response"]
 
@@ -77,6 +79,7 @@ class GenerationClient:
             prompt=prompt,
             options={"num_ctx": num_ctx, "num_predict": num_predict},
             stream=True,
+            think=False,  # see generate(): keep reasoning out of the spoken reply
         )
         sentinel = object()
 
