@@ -8,14 +8,19 @@ to `voice-svc`.
 
 ## Install
 
-    pip install --extra-index-url https://gitlab.com/api/v4/projects/83381755/packages/pypi/simple persona-cli
+    git clone https://gitlab.com/muxu-io/persona-cli.git
+    cd persona-cli
+    poetry install
 
 ## Use (against a running moai stack)
 
-    persona chat ada-mcleish [--scenario <id>] [--no-voice]
-    persona status ada-mcleish
-    persona scenarios ada-mcleish
-    persona inventory ada-mcleish
+Set `PERSONA_MODEL` to the model your stack serves (otherwise it defaults to the
+old 9B), then run from the checkout with `poetry run`:
+
+    PERSONA_MODEL=<model> poetry run persona chat ada-mcleish [--scenario <id>] [--no-voice]
+    poetry run persona status ada-mcleish
+    poetry run persona scenarios ada-mcleish
+    poetry run persona inventory ada-mcleish
 
 Inside a `chat` session, prefix a message with `/think` to make the model reason
 for that one turn (e.g. `/think what changed between us since last time?`).
