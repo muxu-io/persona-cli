@@ -11,9 +11,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from persona_core.fatigue import FatigueLevel, FatigueThresholds, derive_fatigue_level
 from persona_core.qdrant_store import QdrantStore
-
-from persona.fatigue import FatigueLevel, FatigueThresholds, derive_fatigue_level
 
 
 @dataclass(frozen=True)

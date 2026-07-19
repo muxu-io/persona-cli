@@ -1010,14 +1010,14 @@ re2 = ["google-re2 (>=1.1)"]
 
 [[package]]
 name = "persona-core"
-version = "1.0.0"
+version = "1.1.0"
 description = "Shared data-model + storage kernel for the persona runtime and authoring services (frozen cold-path surface)."
 optional = false
 python-versions = ">=3.11,<4.0"
 groups = ["main"]
 files = [
-    {file = "persona_core-1.0.0-py3-none-any.whl", hash = "sha256:73c1eaa7cdbce1b7f8a7a80dd8945a041b635232826cfdfddf48f2209c256e42"},
-    {file = "persona_core-1.0.0.tar.gz", hash = "sha256:0085db5c0ad413d40b0233fd4e1741f1339e60364fe93f61aba9ae6316c8994e"},
+    {file = "persona_core-1.1.0-py3-none-any.whl", hash = "sha256:7b45fa7cf2475821e816b612417f1b25c6641170c0765bfbbd7c067ddacdcb88"},
+    {file = "persona_core-1.1.0.tar.gz", hash = "sha256:514dad01bf44cba517ec28a612e4a73c50d7c14235ffe317589748c60a94bfee"},
 ]
 
 [package.dependencies]
@@ -1910,4 +1910,4 @@ zstd = ["backports-zstd (>=1.0.0) ; python_version < \"3.14\""]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11,<4.0"
-content-hash = "9a248bf21069ccc44ce10873bea76d8e03fc57d479affdf53e7bdf45e7a67aaf"
+content-hash = "0ac5169e486e3f1fd47c85a7bc68df329cbaa5dd5d922c3c1c22fd1c29e82d03"

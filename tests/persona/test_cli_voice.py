@@ -43,10 +43,10 @@ def test_run_voice_turn_resolves_spec(monkeypatch):
     import asyncio
     from pathlib import Path
 
+    from persona_core.fatigue import FatigueLevel
     from persona_core.parser import parse_persona_file
 
     import persona.cli as cli
-    from persona.fatigue import FatigueLevel
     from persona.voice_spec import VoiceSpec
 
     persona = parse_persona_file(Path(__file__).parent.parent / "fixtures" / "minimal_persona.md")
@@ -82,7 +82,7 @@ def test_run_voice_turn_resolves_spec(monkeypatch):
     monkeypatch.setattr("persona.audio_sink.SounddeviceSink", _StubSink)
     monkeypatch.setattr("httpx.AsyncClient", _StubAsyncClient)
     monkeypatch.setattr("persona.voice_client.VoiceClient", _StubVoiceClient)
-    monkeypatch.setattr("persona.generation.run_turn_async", _stub_run_turn_async)
+    monkeypatch.setattr("persona_core.generation.run_turn_async", _stub_run_turn_async)
 
     response, still_on = asyncio.run(
         cli._run_voice_turn(
@@ -119,10 +119,10 @@ def test_run_voice_turn_forwards_think(monkeypatch):
     import asyncio
     from pathlib import Path
 
+    from persona_core.fatigue import FatigueLevel
     from persona_core.parser import parse_persona_file
 
     import persona.cli as cli
-    from persona.fatigue import FatigueLevel
 
     persona = parse_persona_file(Path(__file__).parent.parent / "fixtures" / "minimal_persona.md")
 
@@ -156,7 +156,7 @@ def test_run_voice_turn_forwards_think(monkeypatch):
     monkeypatch.setattr("persona.audio_sink.SounddeviceSink", _StubSink)
     monkeypatch.setattr("httpx.AsyncClient", _StubAsyncClient)
     monkeypatch.setattr("persona.voice_client.VoiceClient", _StubVoiceClient)
-    monkeypatch.setattr("persona.generation.run_turn_async", _stub_run_turn_async)
+    monkeypatch.setattr("persona_core.generation.run_turn_async", _stub_run_turn_async)
 
     asyncio.run(
         cli._run_voice_turn(
