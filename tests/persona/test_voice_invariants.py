@@ -4,11 +4,10 @@ working memory to a 30-turn session with voice off. Runtime state is persisted
 only at session end (not per turn), so it is not exercised here."""
 
 import pytest
+from persona_core.generation import GenerationClient, run_turn, run_turn_async
 from persona_core.qdrant_store import QdrantStore
 from persona_core.records import EpisodicRecord
 from persona_core.schema import Persona
-
-from persona.generation import GenerationClient, run_turn, run_turn_async
 
 N_TURNS = 30
 

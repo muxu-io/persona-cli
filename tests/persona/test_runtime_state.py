@@ -1,8 +1,8 @@
 import pytest
+from persona_core.fatigue import FatigueLevel
 from persona_core.qdrant_store import QdrantStore
 from persona_core.records import EpisodicRecord, RecordType
 
-from persona.fatigue import FatigueLevel
 from persona.runtime_state import PresentationState, derive_presentation_state
 
 

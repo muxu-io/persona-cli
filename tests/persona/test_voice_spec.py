@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import base64
 
+from persona_core.fatigue import FatigueLevel
 from persona_core.parser import parse_persona_file
 
-from persona.fatigue import FatigueLevel
 from persona.voice_spec import resolve_voice_spec
 
 _HEADER = (

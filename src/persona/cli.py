@@ -16,15 +16,14 @@ from datetime import UTC, date, datetime
 
 from persona_core.bootstrap import PersonaNotInStore, load_persona
 from persona_core.embedding import EmbeddingClient
+from persona_core.fatigue import FatigueThresholds, derive_fatigue_level
+from persona_core.generation import GenerationClient, run_turn
 from persona_core.qdrant_store import QdrantStore
+from persona_core.retrieval import RetrievalConfig, retrieve_relevant
+from persona_core.scenario import Scenario
+from persona_core.scoring import ScoreWeights
 from persona_core.store_client import StoreClient
 from persona_core.triggering import TriggerConfig, select_triggered
-
-from persona.fatigue import FatigueThresholds, derive_fatigue_level
-from persona.generation import GenerationClient, run_turn
-from persona.retrieval import RetrievalConfig, retrieve_relevant
-from persona.scenario import Scenario
-from persona.scoring import ScoreWeights
 
 
 def _store_client() -> StoreClient:
@@ -97,9 +96,9 @@ async def _run_voice_turn(
     On VoiceUnavailable the caller downgrades to text-only for the rest of the
     session."""
     import httpx
+    from persona_core.generation import run_turn_async
 
     from persona.audio_sink import SounddeviceSink
-    from persona.generation import run_turn_async
     from persona.voice_client import VoiceClient, VoiceUnavailable
     from persona.voice_spec import resolve_voice_spec
 

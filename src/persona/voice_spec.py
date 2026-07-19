@@ -7,9 +7,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Protocol
 
+from persona_core.fatigue import FatigueLevel
 from persona_core.schema import Persona
 
-from persona.fatigue import FatigueLevel
 from persona.piper_defaults import resolve_piper_voice
 
 
