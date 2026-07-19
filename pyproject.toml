@@ -1,6 +1,6 @@
 [project]
 name = "persona-cli"
-version = "1.1.0"
+version = "1.2.0"
 description = "Interactive runtime CLI for locally-hosted persona LLMs: episodic memory, evolving personality, optional streamed voice."
 requires-python = ">=3.11,<4.0"
 license = { text = "Apache-2.0" }
